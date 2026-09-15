@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Symptom Tracker</title>
+<meta name="description" content="Track autoimmune symptoms and medication doses, with reminders for your next dose." />
+<meta name="theme-color" content="#ae431e" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Symptom Tracker" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Fraunces:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <h1>Symptom Tracker</h1>
+    <div class="topbar-actions">
+      <button id="notifyBtn" class="pill-btn" type="button">Enable reminders</button>
+      <button id="menuBtn" class="icon-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="views">
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view active">
+      <div id="doseCards" class="card-stack"></div>
+
+      <h2 class="section-title">Quick log a symptom</h2>
+      <div id="quickSymptoms" class="chip-row"></div>
+
+      <h2 class="section-title">Recent activity</h2>
+      <ul id="recentList" class="entry-list"></ul>
+    </section>
+
+    <!-- SYMPTOMS -->
+    <section id="view-symptoms" class="view">
+      <h2 class="section-title">Log a symptom</h2>
+      <form id="symptomForm" class="card form">
+        <label>
+          Symptom
+          <select id="symType" required></select>
+        </label>
+        <label id="customLabelWrap" hidden>
+          Describe it
+          <input id="symCustom" type="text" maxlength="60" placeholder="e.g. tinnitus" />
+        </label>
+        <div id="newSymptomWrap" class="field-block" hidden>
+          <span class="field-label">Name your symptom</span>
+          <div class="inline-row">
+            <input id="newSymptomName" type="text" maxlength="40" placeholder="e.g. Tinnitus" style="flex:1" />
+            <button type="button" id="addSymptomTypeBtn" class="secondary-btn">Add</button>
+          </div>
+          <p class="muted" style="margin:0">This gets added to your symptom list for next time, and appears in Quick log if you use it often.</p>
+        </div>
+
+        <div class="field-block">
+          <span class="field-label">How bad does it feel?</span>
+          <div class="severity-face">
+            <div id="severityValue" class="face-value">5</div>
+            <div id="severityLabel" class="face-label">Hurts more</div>
+          </div>
+          <div id="severityGroup" class="sev-grid" role="radiogroup" aria-label="Severity, 1 to 10">
+            <button type="button" class="sev-btn" data-sev="1" style="--hue:130"><strong>1</strong></button>
+            <button type="button" class="sev-btn" data-sev="2" style="--hue:118"><strong>2</strong></button>
+            <button type="button" class="sev-btn" data-sev="3" style="--hue:100"><strong>3</strong></button>
+            <button type="button" class="sev-btn" data-sev="4" style="--hue:85"><strong>4</strong></button>
+            <button type="button" class="sev-btn active" data-sev="5" style="--hue:65"><strong>5</strong></button>
+            <button type="button" class="sev-btn" data-sev="6" style="--hue:50"><strong>6</strong></button>
+            <button type="button" class="sev-btn" data-sev="7" style="--hue:38"><strong>7</strong></button>
+            <button type="button" class="sev-btn" data-sev="8" style="--hue:25"><strong>8</strong></button>
+            <button type="button" class="sev-btn" data-sev="9" style="--hue:12"><strong>9</strong></button>
+            <button type="button" class="sev-btn" data-sev="10" style="--hue:0"><strong>10</strong></button>
+          </div>
+          <div class="sev-endcaps"><span>barely there</span><span>worst ever</span></div>
+        </div>
+
+        <div class="field-block">
+          <span class="field-label">Possible triggers <span class="optional">(optional, pick any)</span></span>
+          <div id="triggerGroup" class="chip-row"></div>
+          <input id="symTriggerOther" type="text" class="trigger-other" maxlength="40" placeholder="+ other trigger, then press Enter" />
+        </div>
+
+        <label>
+          When
+          <input id="symWhen" type="datetime-local" required />
+        </label>
+        <label>
+          Notes <span class="optional">(optional)</span>
+          <textarea id="symNotes" rows="2" maxlength="300" placeholder="anything else useful later"></textarea>
+        </label>
+        <div class="field-block">
+          <span class="field-label">Photo <span class="optional">(optional — rash, swelling, anything visible)</span></span>
+          <div class="photo-input-row">
+            <button type="button" id="addPhotoBtn" class="secondary-btn">Add a photo</button>
+            <input id="symPhoto" type="file" accept="image/*" capture="environment" hidden />
+            <img id="photoPreview" class="photo-thumb" hidden />
+            <button type="button" id="removePhotoBtn" class="remove-photo-btn" hidden>Remove</button>
+          </div>
+        </div>
+        <button type="submit" class="primary-btn" id="symptomSubmitBtn">Save symptom</button>
+        <button type="button" class="secondary-btn" id="cancelEditBtn" hidden>Cancel edit</button>
+      </form>
+
+      <div class="nav-card-row" style="margin-top:18px">
+        <button type="button" class="nav-card" id="goCheckin">
+          <div><div class="nav-title">Daily check-in</div><div class="nav-sub">Fatigue, stiffness, sleep, mood, and how you're functioning</div></div>
+          <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+        <button type="button" class="nav-card" id="goFlares">
+          <div><div class="nav-title">Flares</div><div class="nav-sub">Track a flare from onset to recovery</div></div>
+          <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <h2 class="section-title">Patterns</h2>
+      <div id="patternsCard" class="card"></div>
+
+      <h2 class="section-title">History</h2>
+      <div id="symptomFilterRow" class="chip-row"></div>
+      <ul id="symptomHistory" class="entry-list"></ul>
+    </section>
+
+    <!-- DAILY CHECK-IN -->
+    <section id="view-checkin" class="view">
+      <div class="page-header">
+        <button type="button" class="back-btn" data-back="symptoms" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h2>Daily check-in</h2>
+      </div>
+
+      <form id="checkinForm" class="card form">
+        <div class="field-block">
+          <span class="field-label">Fatigue today</span>
+          <div class="severity-face">
+            <div id="fatigueValue" class="face-value">5</div>
+            <div id="fatigueLabel" class="face-label">Moderate fatigue</div>
+          </div>
+          <div id="fatigueGroup" class="sev-grid" role="radiogroup" aria-label="Fatigue, 1 to 10">
+            <button type="button" class="sev-btn" data-sev="1" style="--hue:130"><strong>1</strong></button>
+            <button type="button" class="sev-btn" data-sev="2" style="--hue:118"><strong>2</strong></button>
+            <button type="button" class="sev-btn" data-sev="3" style="--hue:100"><strong>3</strong></button>
+            <button type="button" class="sev-btn" data-sev="4" style="--hue:85"><strong>4</strong></button>
+            <button type="button" class="sev-btn active" data-sev="5" style="--hue:65"><strong>5</strong></button>
+            <button type="button" class="sev-btn" data-sev="6" style="--hue:50"><strong>6</strong></button>
+            <button type="button" class="sev-btn" data-sev="7" style="--hue:38"><strong>7</strong></button>
+            <button type="button" class="sev-btn" data-sev="8" style="--hue:25"><strong>8</strong></button>
+            <button type="button" class="sev-btn" data-sev="9" style="--hue:12"><strong>9</strong></button>
+            <button type="button" class="sev-btn" data-sev="10" style="--hue:0"><strong>10</strong></button>
+          </div>
+          <div class="sev-endcaps"><span>fully rested</span><span>can't function</span></div>
+        </div>
+
+        <div class="field-block">
+          <span class="field-label">Morning stiffness — how long did it last?</span>
+          <div id="stiffnessGroup" class="chip-row"></div>
+        </div>
+
+        <div class="field-block">
+          <span class="field-label">Sleep last night</span>
+          <div id="sleepHoursGroup" class="chip-row"></div>
+        </div>
+        <div class="field-block">
+          <span class="field-label">Sleep quality</span>
+          <div id="sleepQualityGroup" class="chip-row"></div>
+        </div>
+
+        <div class="field-block">
+          <span class="field-label">Mood today</span>
+          <div id="moodGroup" class="chip-row"></div>
+        </div>
+
+        <div class="field-block option-group">
+          <span class="field-label" style="margin-bottom:-4px">How you're functioning today</span>
+          <div class="option-row" data-function="dressing">
+            <span class="field-label">Getting dressed (buttons, zippers)</span>
+            <div class="option-btns"></div>
+          </div>
+          <div class="option-row" data-function="gripping">
+            <span class="field-label">Gripping or opening things (jars, doorknobs)</span>
+            <div class="option-btns"></div>
+          </div>
+          <div class="option-row" data-function="stairs">
+            <span class="field-label">Climbing stairs</span>
+            <div class="option-btns"></div>
+          </div>
+          <div class="option-row" data-function="workday">
+            <span class="field-label">Getting through a full day (work/school)</span>
+            <div class="option-btns"></div>
+          </div>
+        </div>
+
+        <button type="submit" class="primary-btn">Save today's check-in</button>
+        <p class="muted" style="margin-top:-6px">One check-in per day — saving again today updates it.</p>
+      </form>
+
+      <h2 class="section-title">Recent check-ins</h2>
+      <ul id="checkinHistory" class="entry-list"></ul>
+    </section>
+
+    <!-- FLARES -->
+    <section id="view-flares" class="view">
+      <div class="page-header">
+        <button type="button" class="back-btn" data-back="symptoms" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h2>Flares</h2>
+      </div>
+
+      <div id="flareStatus"></div>
+
+      <h2 class="section-title">Past flares</h2>
+      <ul id="flareHistory" class="entry-list"></ul>
+    </section>
+
+    <!-- MEDICATIONS -->
+    <section id="view-meds" class="view">
+      <h2 class="section-title">Your medications</h2>
+      <ul id="medList" class="entry-list"></ul>
+
+      <h2 class="section-title">Add a medication</h2>
+      <form id="medForm" class="card form">
+        <label>
+          Name
+          <input id="medName" type="text" required placeholder="e.g. Prednisone" />
+        </label>
+        <label>
+          Dosage <span class="optional">(optional)</span>
+          <input id="medDosage" type="text" placeholder="e.g. 10mg" />
+        </label>
+        <label>
+          Repeat every
+          <div class="inline-row">
+            <input id="medInterval" type="number" min="1" max="365" value="1" />
+            <select id="medIntervalUnit">
+              <option value="day">Day(s)</option>
+              <option value="week">Week(s)</option>
+              <option value="month">Month(s)</option>
+              <option value="year">Year(s)</option>
+            </select>
+          </div>
+        </label>
+        <label>
+          Last dose taken <span class="optional">(leave blank if you haven't started)</span>
+          <input id="medLastTaken" type="datetime-local" />
+        </label>
+        <label>
+          Doses left <span class="optional">(optional — tracks refills for you)</span>
+          <input id="medQuantity" type="number" min="0" placeholder="e.g. 30" />
+        </label>
+        <label id="medThresholdWrap" hidden>
+          Remind me to refill when
+          <div class="inline-row">
+            <span>≤</span>
+            <input id="medThreshold" type="number" min="0" value="5" style="width:70px" />
+            <span>doses left</span>
+          </div>
+        </label>
+        <label>
+          Notes <span class="optional">(optional)</span>
+          <input id="medNotes" type="text" maxlength="200" placeholder="e.g. take with food" />
+        </label>
+        <button type="submit" class="primary-btn">Add medication</button>
+      </form>
+    </section>
+
+    <!-- INSIGHTS -->
+    <section id="view-insights" class="view">
+      <div id="kpiRow" class="kpi-row"></div>
+
+      <h2 class="section-title">Most common symptoms · 30 days</h2>
+      <div id="chartFrequency" class="card chart-card"></div>
+
+      <h2 class="section-title">Severity over time · 8 weeks</h2>
+      <div id="chartSeverity" class="card chart-card"></div>
+
+      <h2 class="section-title">Possible triggers · 30 days</h2>
+      <div id="chartTriggers" class="card chart-card"></div>
+
+      <h2 class="section-title">Flare calendar · 30 days</h2>
+      <div id="chartHeatmap" class="card chart-card"></div>
+    </section>
+
+    <!-- PICK ME UP -->
+    <section id="view-pickmeup" class="view">
+      <h2 class="section-title">Need a lift?</h2>
+      <p class="muted">Sometimes you want cheering up. Sometimes you just want someone to hear you out. Pick whichever fits right now.</p>
+
+      <div id="toneGroup" class="tone-grid">
+        <button type="button" class="tone-card tone-hopeful" data-tone="hopeful">
+          <span class="grain-noise" aria-hidden="true"></span>
+          <span class="tone-name">Hopeful</span>
+          <span class="tone-desc">Something to hold onto</span>
+        </button>
+        <button type="button" class="tone-card tone-optimistic" data-tone="optimistic">
+          <span class="grain-noise" aria-hidden="true"></span>
+          <span class="tone-name">Optimistic</span>
+          <span class="tone-desc">A gentle nudge toward the bright side</span>
+        </button>
+        <button type="button" class="tone-card tone-supportive" data-tone="supportive">
+          <span class="grain-noise" aria-hidden="true"></span>
+          <span class="tone-name">Supportive</span>
+          <span class="tone-desc">Just someone who gets it</span>
+        </button>
+      </div>
+
+      <div class="field-block form" style="margin-top:18px">
+        <span class="field-label">Want to share what's going on? <span class="optional">(optional, stays on this device, never sent anywhere)</span></span>
+        <textarea id="pickMeUpNote" rows="3" maxlength="300" placeholder="whatever's on your mind right now…"></textarea>
+      </div>
+
+      <button type="button" id="getLiftBtn" class="primary-btn" style="width:100%" disabled>Choose a mood above</button>
+    </section>
+
+    <!-- PICK ME UP RESPONSE -->
+    <section id="view-pickmeup-response" class="view lift-fullscreen">
+      <div class="grain-noise" aria-hidden="true"></div>
+      <div class="lift-vignette"></div>
+      <button type="button" class="back-btn lift-back" data-back="pickmeup" aria-label="Choose a different mood">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="lift-content">
+        <span id="liftTag" class="lift-tag"></span>
+        <p id="liftMessage" class="lift-message"></p>
+      </div>
+      <button type="button" id="anotherLiftBtn" class="lift-another-btn">Give me another</button>
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-view="dashboard">
+      <svg class="icon-outline" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>
+      <svg class="icon-solid" viewBox="0 0 24 24"><path d="M12 3l9 8h-2.5v8.5a.5.5 0 01-.5.5h-4v-6h-4v6H6a.5.5 0 01-.5-.5V11H3l9-8z"/></svg>Home
+    </button>
+    <button class="tab" data-view="symptoms">
+      <svg class="icon-outline" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+      <svg class="icon-solid" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3" stroke="var(--surface)"/></svg>Symptoms
+    </button>
+    <button class="tab" data-view="meds">
+      <svg class="icon-outline" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="8" rx="4" transform="rotate(-30 12 13)"/><path d="M8.5 15.5l7-7" transform="rotate(-30 12 13)"/></svg>
+      <svg class="icon-solid" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="8" rx="4" transform="rotate(-30 12 13)"/><path d="M8.5 15.5l7-7" transform="rotate(-30 12 13)" stroke="var(--surface)"/></svg>Meds
+    </button>
+    <button class="tab" data-view="insights">
+      <svg class="icon-outline" viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      <svg class="icon-solid" viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="10" width="4" height="11" rx="1"/></svg>Insights
+    </button>
+    <button class="tab" data-view="pickmeup">
+      <svg class="icon-outline" viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.8C.8 8.6 2.2 5 5.6 5c1.9 0 3.4 1 4.4 2.4C11 6 12.5 5 14.4 5c3.4 0 4.8 3.6 3.1 7.2C19 16.65 12 21 12 21z"/></svg>
+      <svg class="icon-solid" viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.8C.8 8.6 2.2 5 5.6 5c1.9 0 3.4 1 4.4 2.4C11 6 12.5 5 14.4 5c3.4 0 4.8 3.6 3.1 7.2C19 16.65 12 21 12 21z"/></svg>Lift
+    </button>
+  </nav>
+
+  <div id="drawerBackdrop" class="drawer-backdrop" hidden></div>
+  <aside id="settingsDrawer" class="drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <h2>Menu</h2>
+      <button type="button" id="closeDrawerBtn" class="icon-btn" aria-label="Close menu">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <h2 class="section-title">Account</h2>
+      <div class="card">
+        <div id="accountSignedOut">
+          <p class="muted">Sign in to sync your symptoms, meds, check-ins, and flares across your devices. Everything stays local until you do.</p>
+          <form id="authForm" class="form">
+            <label>
+              Email
+              <input id="authEmail" type="email" required autocomplete="email" />
+            </label>
+            <label>
+              Password
+              <input id="authPassword" type="password" required minlength="6" autocomplete="current-password" />
+            </label>
+            <p id="authError" class="muted" style="color:var(--danger)" hidden></p>
+            <button type="submit" id="authSubmitBtn" class="primary-btn">Sign in</button>
+          </form>
+          <button type="button" id="authToggleModeBtn" class="link-btn">New here? Create an account</button>
+        </div>
+
+        <div id="accountSignedIn" hidden>
+          <p class="muted">Signed in as <strong id="accountEmail"></strong></p>
+          <p class="muted" id="syncStatus">Synced</p>
+          <button type="button" id="signOutBtn" class="secondary-btn">Sign out</button>
+        </div>
+      </div>
+
+      <h2 class="section-title">Backup &amp; data</h2>
+      <div class="card">
+        <p class="muted">Everything is stored only on this device, in this browser. Nothing is sent anywhere. Export a backup regularly, especially before clearing browser data or switching devices.</p>
+        <p class="muted">Photos attached to symptoms are stored separately on this device and are not included in the exported backup file yet.</p>
+        <div class="btn-row">
+          <button id="exportBtn" class="secondary-btn" type="button">Export backup (.json)</button>
+          <button id="importBtn" class="secondary-btn" type="button">Import backup</button>
+          <input id="importFile" type="file" accept="application/json" hidden />
+        </div>
+        <div class="btn-row">
+          <button id="wipeBtn" class="danger-btn" type="button">Erase all data</button>
+        </div>
+      </div>
+
+      <h2 class="section-title">Reminders</h2>
+      <div class="card">
+        <p class="muted" id="notifyStatus">Checking notification support…</p>
+        <p class="muted">Reminders fire while this app is open or installed and running in the background. If your phone fully closes the app for a long time, the OS may pause reminders — reopening the app will immediately show anything overdue on the dashboard.</p>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
