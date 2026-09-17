@@ -62,7 +62,7 @@ html, body {
   background-image: var(--paper-texture);
   z-index: 5;
 }
-.topbar h1 { font-family: "Bree Serif", Georgia, serif; font-size: 1.3rem; font-weight: 400; margin: 0; letter-spacing: -0.01em; color: #fff; }
+.topbar h1 { font-family: "Bree Serif", Georgia, serif; font-size: 1.45rem; font-weight: 400; margin: 0; letter-spacing: -0.01em; color: #fff; }
 
 .pill-btn {
   background: var(--surface-2);
